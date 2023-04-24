@@ -1,6 +1,7 @@
 <?php
 use Phalcon\Mvc\Controller;
 use Phalcon\Http\Response;
+use App\Components\myescaper;
 
 class LoginController extends Controller
 {
@@ -11,8 +12,13 @@ class LoginController extends Controller
     public function loginAction()
     {
         $user = new Users();
+        $san = new Myescaper();
+        $arr = array(
+            'email' => $san->sanitize($this->request->getPost('email')),
+            'password' => $san->sanitize($this->request->getPost('password'))
+        );
         $user->assign(
-            $this->request->getPost(),
+            $arr,
             [
                 'email',
                 'password',
@@ -37,16 +43,21 @@ class LoginController extends Controller
             $this->response->redirect('login/dashboard');
             $this->view->disable();
         } else {
+            // if credentials were invalid, then log in login.log
+            $this->logger
+                ->excludeAdapters(['signup'])
+                ->info('Unauthorized access attempt by : email => \''
+                . $arr['name'] . '\' password => \'' . $arr['password'] . '\'');
             $response->setStatusCode(403, 'User Not Found');
             $response->setContent('Authentication Failed!');
-            $response->send();die;
+            $response->send();
+            die;
         }
     }
     public function DashboardAction()
     {
         // if it's not marked as loggedIn in session, redirect to login
-        $response = new Response();
-        if(!$this->session->loggedIn) {
+        if (!$this->session->loggedIn) {
             $this->response->redirect('login/index');
         }
     }

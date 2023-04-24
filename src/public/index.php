@@ -9,6 +9,8 @@ use Phalcon\Config;
 use Phalcon\Session\Manager;
 use Phalcon\Session\Adapter\Stream;
 use Phalcon\Http\Response\Cookies; // for cookies
+use Phalcon\Logger;
+use Phalcon\Logger\Adapter\Stream as logStream;
 
 $config = new Config([]);
 
@@ -25,6 +27,9 @@ $loader->registerDirs(
         APP_PATH . "/models/",
     ]
 );
+$loader->registerNamespaces([
+    'App\Components' => APP_PATH . '/components/',
+]);
 
 $loader->register();
 
@@ -48,6 +53,21 @@ $container->set(
     }
 );
 
+$container->set(
+    'logger',
+    function () {
+        $loginAdapter = new logStream(APP_PATH . '/logs/login.log');
+        $signupAdapter = new logStream(APP_PATH . '/logs/signup.log');
+        return new Logger(
+            'messages',
+            [
+                'login' => $loginAdapter,
+                'signup' => $signupAdapter
+            ]
+        );
+    }
+);
+
 $application = new Application($container);
 
 $container->set(
@@ -63,6 +83,7 @@ $container->set(
         );
     }
 );
+
 // injecting session in container
 $container->set(
     'session',
@@ -78,6 +99,7 @@ $container->set(
         return $session;
     }
 );
+
 // injecting response
 $container->set(
     'response',
@@ -93,14 +115,7 @@ $container->set(
         return $cookies;
     }
 );
-// injecting time in container
-$container->set(
-    'time',
-    function() {
-        date_default_timezone_set('Asia/Kolkata');
-        return date("Y-m-d h:iA");
-    }
-);
+
 try {
     // Handle the request
     $response = $application->handle(
