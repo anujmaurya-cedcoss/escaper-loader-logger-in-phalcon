@@ -1,5 +1,6 @@
 <?php
 namespace App\Components;
+
 use Phalcon\Escaper;
 
 class Myescaper
